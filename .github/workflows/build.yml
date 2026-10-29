@@ -23,14 +23,12 @@ jobs:
       - run: npx cap add android
       - run: npx cap sync android
 
-      - name: Fullscreen ও রোটেশন সেটআপ
+      - name: Fullscreen সেটআপ
         run: |
           MAIN=$(find android -name MainActivity.java)
           cat > $MAIN << 'EOF'
           package com.myname.videoplayer;
 
-          import android.os.Bundle;
-          import android.view.View;
           import androidx.core.view.WindowCompat;
           import androidx.core.view.WindowInsetsCompat;
           import androidx.core.view.WindowInsetsControllerCompat;
@@ -52,7 +50,6 @@ jobs:
               }
           }
           EOF
-          sed -i 's/<activity/<activity android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout" android:screenOrientation="fullSensor"/' android/app/src/main/AndroidManifest.xml
 
       - name: APK বিল্ড
         run: |
