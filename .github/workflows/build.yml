@@ -1,0 +1,66 @@
+name: Build APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm install
+      - run: npx cap add android
+      - run: npx cap sync android
+
+      - name: Fullscreen ও রোটেশন সেটআপ
+        run: |
+          MAIN=$(find android -name MainActivity.java)
+          cat > $MAIN << 'EOF'
+          package com.myname.videoplayer;
+
+          import android.os.Bundle;
+          import android.view.View;
+          import androidx.core.view.WindowCompat;
+          import androidx.core.view.WindowInsetsCompat;
+          import androidx.core.view.WindowInsetsControllerCompat;
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+              @Override
+              public void onWindowFocusChanged(boolean hasFocus) {
+                  super.onWindowFocusChanged(hasFocus);
+                  if (hasFocus) hideSystemBars();
+              }
+              private void hideSystemBars() {
+                  WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
+                  WindowInsetsControllerCompat c =
+                      WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+                  c.hide(WindowInsetsCompat.Type.systemBars());
+                  c.setSystemBarsBehavior(
+                      WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+              }
+          }
+          EOF
+          sed -i 's/<activity/<activity android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout" android:screenOrientation="fullSensor"/' android/app/src/main/AndroidManifest.xml
+
+      - name: APK বিল্ড
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
