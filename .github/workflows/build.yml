@@ -21,6 +21,9 @@ jobs:
 
       - run: npm install
       - run: npx cap add android
+      - run: mkdir -p assets && cp icon.png assets/icon.png
+      - run: npm install @capacitor/assets --save-dev
+      - run: npx capacitor-assets generate --android
       - run: npx cap sync android
 
       - name: Fullscreen সেটআপ
