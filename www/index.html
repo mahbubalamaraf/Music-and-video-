@@ -38,12 +38,15 @@ header{position:sticky;top:0;z-index:5;background:var(--glass);backdrop-filter:b
 label.sb2{display:inline-flex;align-items:center;cursor:pointer}
 .sb{position:relative}
 .sb svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:19px;height:19px;color:var(--mu)}
-#q{width:100%;padding:13px 16px 13px 44px;border-radius:16px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-size:15px;outline:none;transition:.2s}
-#q:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(124,58,237,.2)}
+#q,#mq{width:100%;padding:13px 16px 13px 44px;border-radius:16px;border:1px solid var(--bd);background:var(--card);color:var(--tx);font:inherit;font-size:15px;outline:none;transition:.2s}
+#q:focus,#mq:focus{border-color:var(--ac);box-shadow:0 0 0 3px rgba(124,58,237,.2)}
 .sec{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 2px;gap:8px}
 .sl{display:flex;align-items:center;gap:6px;min-width:0}
 .sl h2{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sa{display:flex;gap:4px}
+.mvd{display:flex;gap:12px;margin:4px 0 8px}.mvd img{width:110px;border-radius:14px;align-self:flex-start}.mvt{font-size:18px;font-weight:700;line-height:1.35}.mvm{font-size:13px;opacity:.7;margin:5px 0}.mvo{line-height:1.8;font-size:15px;margin:10px 4px;white-space:pre-wrap}.mvc{font-size:11px;opacity:.5;margin:18px 4px}
+.hq{display:flex;gap:10px;margin-bottom:4px}.hbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 8px;border-radius:20px;background:var(--g);color:#fff;font-weight:600;font-size:14px;border:0;cursor:pointer;text-align:center}.hbtn svg{width:26px;height:26px}.hbtn b{font-size:24px;line-height:26px}
+.hh{font-size:13px;font-weight:600;opacity:.65;margin:16px 4px 8px}
 .sb2{gap:6px;font-size:13px;font-weight:500;color:var(--ac);padding:7px 12px;border-radius:12px;background:var(--card);border:1px solid var(--bd)}
 .sb2 svg{width:16px;height:16px}
 .sec .ro{width:36px;height:36px;border-radius:12px}
@@ -291,6 +294,7 @@ html.vpo body>:not(#vp) *{animation-play-state:paused!important;backdrop-filter:
       <div class="tabs" id="tabs"></div>
     </div>
   </div>
+  <div id="mbox" class="hid"><div class="sb"><span data-ic="s"></span><input id="mq" enterkeyhint="search"></div></div>
 </header>
 
 <div class="sec hid" id="hsec"></div>
@@ -411,10 +415,10 @@ function row(t,i){return`<div class="it${cur&&cur.id===t.id?" cur":""}" data-i="
 function show(list,m,empty){shown=list;mode=m||"add";$("list").innerHTML=list.map(row).join("");$("msg").textContent=list.length?"":(empty||T("none"))}
 function head(title,left,right){const h=$("hsec");h.classList.remove("hid");h.innerHTML=`<div class="sl">${left||""}<h2>${esc(title)}</h2></div><div class="sa">${right||""}</div>`}
 function render(){
-  $("sbox").classList.toggle("hid",view!=="music");$("mb").classList.toggle("on",view==="music");
-  const nv=view==="plist"?"playlists":view==="music"?"explore":view;all(".nav-btn",b=>b.classList.toggle("active",b.dataset.v===nv));movePill(true);pill.style.opacity=view==="local"?"0":"1";$("lm").classList.toggle("on",view==="local");
+  $("sbox").classList.toggle("hid",view!=="music");$("mb").classList.toggle("on",view==="music");$("mbox").classList.toggle("hid",view!=="explore");
+  const nv=view==="plist"?"playlists":view==="music"||view==="movie"?"explore":view;all(".nav-btn",b=>b.classList.toggle("active",b.dataset.v===nv));movePill(true);pill.style.opacity=view==="local"?"0":"1";$("lm").classList.toggle("on",view==="local");
   if(view==="music"){$("hsec").classList.add("hid");show(results)}
-  else if(view==="explore"){$("hsec").classList.add("hid");shown=[];$("list").innerHTML="";$("msg").textContent=""}
+  else if(view==="explore"){$("hsec").classList.add("hid");shown=[];mvRender()}
   else if(view==="history"){head(T("history"),"",`<button class="sb2" data-h="clr">${ic("tr")}${T("clear")}</button>`);show(hist,"add",T("noHist"))}
   else if(view==="local"){head(T("local"),"",`<label class="sb2" for="fi">${ic("pu")}${T("addSong")}</label><label class="sb2" for="fd" style="margin-left:6px">${ic("pu")}${T("addFolder")}</label>`);show(loc,"loc",T("noLoc"))}
   else if(view==="playlists"){
@@ -536,6 +540,12 @@ $("q").addEventListener("keydown",e=>{if(e.key==="Enter"){load();mark();e.target
 
 /* list clicks */
 $("list").onclick=e=>{
+  const mb=e.target.closest("[data-mb]");if(mb){MV.det=null;render();return}
+  const mo=e.target.closest("[data-mv]");if(mo){mvOpen(+mo.dataset.mv);return}
+  const hq=e.target.closest("[data-hq]");if(hq){vopen();$("vf").click();return}
+  const hv=e.target.closest("[data-hv]");if(hv){const v=vlast()[+hv.dataset.hv];if(!v)return;
+    if(/^https?:/i.test(v.k)){V.q.push({name:v.n,url:v.k,key:v.k});vopen();vplay(V.q.length-1)}
+    else{vopen();$("vf").click();toast((lang==="en"?"Select: ":"ফাইলটি বেছে নিন: ")+v.n)}return}
   const b=e.target.closest(".ib");
   if(b){const i=+b.dataset.i;if(b.dataset.act==="add")openPicker(shown[i]);else if(b.dataset.act==="loc"){const t=shown[i];ask(T("delSong"),()=>delLoc(t))}else{const p=pls.find(x=>x.id===pid);p.tracks.splice(i,1);savePl();render()}return}
   const p=e.target.closest("[data-p]");if(p){pid=p.dataset.p;view="plist";window.scrollTo(0,0);return render()}
@@ -584,7 +594,7 @@ const mem=new Map();
 const dbGet=id=>mem.has(id)?Promise.resolve(mem.get(id)):tx("readonly",s=>s.get(id)).catch(()=>null);
 const lcov=t=>t.cover||((loc.find(x=>x.id===t.id)||{}).cover)||"";
 const mk=r=>({id:r.id,title:r.title,user:{name:r.artist||""},duration:r.duration,key:r.key,cover:r.cover,local:true,at:r.at});
-tx("readonly",s=>s.getAll()).then(async a=>{a=a||[];loc=a.map(mk).sort((x,y)=>y.at-x.at);if(view==="local")render();
+tx("readonly",s=>s.getAll()).then(async a=>{a=a||[];loc=a.map(mk).sort((x,y)=>y.at-x.at);if(view==="local"||view==="explore")render();
   for(const r of a){if(r.tg===2)continue;try{const g=await tags(r.file);if(g.title)r.title=g.title;if(g.artist)r.artist=g.artist;if(g.pic){const c=await cov(g.pic);if(c)r.cover=c}r.tg=2;await tx("readwrite",s=>s.put(r));const t=loc.find(x=>x.id===r.id);if(t)Object.assign(t,mk(r))}catch(e){}}
   if(view==="local")render();if(cur&&cur.local)setNow(cur)}).catch(()=>{});
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
@@ -645,7 +655,7 @@ const vind=t=>{const e=$("vind");e.textContent=t;e.classList.add("on");clearTime
 let vtm;
 function vshow(){vp.classList.remove("hide");vui();clearTimeout(vtm);if(!vv.paused&&!$("vql").classList.contains("open"))vtm=setTimeout(()=>vp.classList.add("hide"),3000)}
 function vopen(){try{document.fonts.load('500 18px "Hind Siliguri"')}catch(e){}vp.classList.add("open");document.documentElement.classList.add("vpo");V.nofs=0;vbars(1);vtheme(1);vind(HB()?"APP ✓":"WEB");vfull(1).catch(()=>{if(!HB())vind(T("noFs"))});vrq();if(V.q.length&&V.i<0)$("vql").classList.add("open");vshow()}
-function vclose(){vv.pause();vsv(1);vp.classList.remove("open");document.documentElement.classList.remove("vpo");vbars(0);try{HB()&&HB().orient({mode:0}).catch(()=>{})}catch(e){}vtheme(0);V.rot=0;vrotA();try{screen.orientation.unlock()}catch(e){}vfull(0).catch(()=>{})}
+function vclose(){vv.pause();vsv(1);vp.classList.remove("open");document.documentElement.classList.remove("vpo");vbars(0);try{HB()&&HB().orient({mode:0}).catch(()=>{})}catch(e){}vtheme(0);V.rot=0;vrotA();try{screen.orientation.unlock()}catch(e){}vfull(0).catch(()=>{});if(view==="explore")render()}
 async function vfull(on){const d=document,fe=d.fullscreenElement||d.webkitFullscreenElement;if(on){if(!fe)await(vp.requestFullscreen||vp.webkitRequestFullscreen).call(vp)}else if(fe)await(d.exitFullscreen||d.webkitExitFullscreen).call(d)}
 const HB=()=>{try{return window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform()?(HB.p||(HB.p=Capacitor.registerPlugin("HeyBars"))):null}catch(e){return null}};
 async function vbars(on){V.imm=on;const p=HB();if(p){try{await p.immersive({on:!!on})}catch(e){vind("bars: "+((e&&e.message)||e))}return}try{const P=(window.Capacitor&&window.Capacitor.Plugins)||{};
@@ -662,7 +672,8 @@ async function vrot(){if(HB()){try{await HB().orient({mode:innerWidth>innerHeigh
   try{await screen.orientation.lock(land?"portrait":"landscape")}catch(e){}
   setTimeout(()=>{if(!land&&innerWidth<=innerHeight){V.rot=1;vrotA()}},600)}
 const vpos=()=>{try{return JSON.parse(localStorage.getItem("hm_vpos")||"{}")}catch(e){return{}}};
-function vsv(force){const t=V.q[V.i];if(!t||!vv.duration)return;if(!force&&Date.now()-V.ts<3000)return;V.ts=Date.now();try{const p=vpos();p[t.key]=vv.ended?0:vv.currentTime;localStorage.setItem("hm_vpos",JSON.stringify(p))}catch(e){}}
+const vlast=()=>{try{return JSON.parse(localStorage.getItem("hm_vlast")||"[]")}catch(e){return[]}};
+function vsv(force){const t=V.q[V.i];if(!t||!vv.duration)return;if(!force&&Date.now()-V.ts<3000)return;V.ts=Date.now();try{const p=vpos();p[t.key]=vv.ended?0:vv.currentTime;localStorage.setItem("hm_vpos",JSON.stringify(p));const L=vlast().filter(x=>x.k!==t.key);L.unshift({k:t.key,n:t.name,p:vv.ended?0:vv.currentTime,d:vv.duration});localStorage.setItem("hm_vlast",JSON.stringify(L.slice(0,6)))}catch(e){}}
 function vplay(i){if(i<0||i>=V.q.length)return;V.i=i;const t=V.q[i];au.pause();V.sub=[];$("vsub").textContent="";$("vtt").textContent=t.name;
   const p=vpos()[t.key]||0;vv.src=t.pu||t.url;
   vv.onloadedmetadata=()=>{if(p>5&&p<vv.duration-5){vv.currentTime=p;vind("↺ "+vfm(p))}$("vtt").textContent=t.name+" · "+vv.videoWidth+"×"+vv.videoHeight};
@@ -769,6 +780,15 @@ $("vmp").onclick=e=>{const b=e.target.closest("button");if(!b)return;const d=b.d
   vmore()};
 $("vmo").onclick=()=>{$("vql").classList.remove("open");$("vlm").classList.remove("open");const p=$("vmp");if(!p.classList.contains("open"))vmore();p.classList.toggle("open");vshow()};
 
+{let bgp=0;const vo=()=>vp.classList.contains("open");
+  document.addEventListener("visibilitychange",()=>{if(!vo())return;if(document.hidden){bgp=!vv.paused;if(bgp)setTimeout(()=>{if(bgp&&vv.paused)vv.play().catch(()=>{})},400)}else bgp=0});
+  vv.addEventListener("play",()=>{const t=V.q[V.i];if(t&&"mediaSession"in navigator)try{navigator.mediaSession.metadata=new MediaMetadata({title:t.name||"",artist:"hey music"});navigator.mediaSession.playbackState="playing"}catch(e){}});
+  if("mediaSession"in navigator){const m=navigator.mediaSession,h=(a,f)=>{try{m.setActionHandler(a,f)}catch(e){}};
+    h("play",()=>vo()?vv.play():au.play());h("pause",()=>{bgp=0;vo()?vv.pause():au.pause()});
+    h("previoustrack",()=>vo()?vprev():prev());h("nexttrack",()=>vo()?vnext():next(false));
+    h("seekbackward",()=>{if(vo())vseek(-10)});h("seekforward",()=>{if(vo())vseek(10)});
+    h("seekto",d=>{(vo()?vv:au).currentTime=d.seekTime})}}
+
 document.addEventListener("keydown",e=>{if(!vp.classList.contains("open")||/INPUT|TEXTAREA/.test(e.target.tagName))return;const k=e.key;
   if(k===" "||k==="k"){e.preventDefault();vtog()}else if(k==="ArrowRight")vseek(5);else if(k==="ArrowLeft")vseek(-5);else if(k==="l")vseek(10);else if(k==="j")vseek(-10);
   else if(k==="ArrowUp"){e.preventDefault();vv.volume=Math.min(1,vv.volume+.05);$("vvol").value=vv.volume}else if(k==="ArrowDown"){e.preventDefault();vv.volume=Math.max(0,vv.volume-.05);$("vvol").value=vv.volume}
@@ -844,7 +864,68 @@ async function imp(fs){let n=0,d=0;const im={},have=new Set(loc.map(x=>x.key)),d
 $("fi").onchange=$("fd").onchange=e=>{const fs=[...e.target.files];e.target.value="";imp(fs)};
 
 document.body.classList.add("pause");
-applyLang();
+
+const TK="c0a9207e870198467970d98183973a66",TB="https://api.themoviedb.org/3",MV={res:null,det:null,err:0,t:0,busy:0};
+const H=(b,e)=>lang==="en"?e:b;
+const mvj=u=>fetch(u).then(r=>{if(!r.ok)throw 0;return r.json()});
+async function mvTr1(q){let r=null;
+  try{const j=await mvj("https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=bn&dt=t&q="+encodeURIComponent(q));r=j[0].map(x=>x[0]).join("")}catch(e){}
+  if(!r)try{const j=await mvj("https://api.mymemory.translated.net/get?langpair=en|bn&q="+encodeURIComponent(q));r=j.responseData.translatedText}catch(e){}
+  return r?r.trim():null}
+async function mvTr(t){const ps=t.match(/[^.!?।]+[.!?।]*\s*/g)||[t],ch=[];let c="";ps.forEach(x=>{if((c+x).length>400&&c){ch.push(c);c=x}else c+=x});if(c)ch.push(c);
+  const out=await Promise.all(ch.map(mvTr1));return out.some(x=>!x)?null:out.join(" ")}
+function mvCut(t,n){if(t.length<=n)return t;const c=t.slice(0,n),i=Math.max(c.lastIndexOf(". "),c.lastIndexOf("। "));return i>n*.5?c.slice(0,i+1):c}
+async function mvWiki(imdb){
+  const q=await mvj(`https://www.wikidata.org/w/api.php?action=query&list=search&srsearch=haswbstatement:P345=${imdb}&format=json&origin=*`);
+  const id=q.query.search[0].title;
+  const e=await mvj(`https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${id}&props=sitelinks&sitefilter=enwiki|bnwiki&format=json&origin=*`);
+  const sl=e.entities[id].sitelinks||{},res={};
+  for(const[k,h,re]of[["bnwiki","bn",/(?:^|\n)==\s*(?:কাহিনি|কাহিনী|কাহিনিসংক্ষেপ|কাহিনীসংক্ষেপ|কাহিনি সংক্ষেপ|কাহিনী সংক্ষেপ|প্লট|গল্প|সারসংক্ষেপ|চিত্রনাট্য)[^=\n]*==\s*\n([\s\S]*?)(?=\n==[^=]|$)/],["enwiki","en",/(?:^|\n)==\s*(?:Plot|Synopsis|Premise|Plot summary|Story)\s*==\s*\n([\s\S]*?)(?=\n==[^=]|$)/i]]){
+    if(!sl[k])continue;
+    try{const j=await mvj(`https://${h}.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext=1&exsectionformat=wiki&redirects=1&titles=${encodeURIComponent(sl[k].title)}&format=json&origin=*`);
+      const tx=(Object.values(j.query.pages)[0].extract||""),m=tx.match(re);
+      if(m){const t=m[1].replace(/\n=+[^=\n]+=+\s*\n/g,"\n").replace(/\n{3,}/g,"\n\n").trim();if(t.length>80)res[h]=t}}catch(x){}}
+  return res}
+async function mvSearch(q){if(!q)return;const t=++MV.t;MV.det=null;MV.res=null;MV.err=0;MV.busy=1;render();
+  try{const j=await mvj(`${TB}/search/movie?api_key=${TK}&include_adult=false&language=en-US&query=${encodeURIComponent(q)}`);if(t!==MV.t)return;MV.res=(j.results||[]).slice(0,15)}catch(e){if(t!==MV.t)return;MV.err=1}
+  MV.busy=0;if(view==="explore")render()}
+async function mvOpen(id){const t=++MV.t;MV.busy=1;MV.err=0;MV.det=null;render();window.scrollTo(0,0);
+  try{const[d,e]=await Promise.all([mvj(`${TB}/movie/${id}?api_key=${TK}&language=bn-BD`),mvj(`${TB}/movie/${id}?api_key=${TK}&language=en-US&append_to_response=credits`)]);if(t!==MV.t)return;
+    let ov=(d.overview||"").trim(),tr=0,en=0;
+    if(!ov&&(e.overview||"").trim()){const x=await mvTr(e.overview.trim());if(t!==MV.t)return;if(x){ov=x;tr=1}else{ov=e.overview.trim();en=1}}
+    const cr=e.credits||{},dir=(cr.crew||[]).filter(x=>x.job==="Director").map(x=>x.name).slice(0,2).join(", "),cast=(cr.cast||[]).slice(0,5).map(x=>x.name).join(", ");
+    MV.det={id,title:d.title||e.title,orig:e.title,poster:d.poster_path||e.poster_path,year:(d.release_date||e.release_date||"").slice(0,4),rate:d.vote_average||e.vote_average,run:d.runtime||e.runtime,gen:(d.genres||e.genres||[]).map(g=>g.name).join(", "),ov,tr,en,dir,cast,tag:e.tagline||"",wl:!!(d.imdb_id||e.imdb_id),plot:"",pt:0,ps:""};
+    MV.busy=0;if(view==="explore")render();
+    const imdb=d.imdb_id||e.imdb_id;if(imdb)mvPlot(imdb,t)}
+  catch(x){if(t!==MV.t)return;MV.err=1;MV.busy=0;if(view==="explore")render()}}
+async function mvPlot(imdb,t){let w={};try{w=await mvWiki(imdb)}catch(e){}
+  if(t!==MV.t||!MV.det)return;const d=MV.det;
+  if(w.bn){d.plot=mvCut(w.bn,2600);d.ps="bn"}
+  else if(w.en){const en=mvCut(w.en,2200),x=await mvTr(en);if(t!==MV.t||!MV.det)return;d.plot=x||en;d.pt=x?1:0;d.ps="en"}
+  d.wl=0;if(view==="explore")render()}
+function mvRender(){const l=$("list"),m=$("msg");$("mq").placeholder=H("মুভির নাম লিখুন...","Type a movie name...");
+  const hq="";
+  const cr=`<div class="mvc">This product uses the TMDB API but is not endorsed or certified by TMDB. Data from TMDB.${MV.det&&MV.det.ps?" Story text from Wikipedia (CC BY-SA).":""}</div>`;
+  if(MV.busy){l.innerHTML=hq;m.textContent=H("লোড হচ্ছে...","Loading...");return}
+  if(MV.err){l.innerHTML=hq;m.textContent=H("ইন্টারনেট সংযোগ দরকার বা কিছু সমস্যা হয়েছে। আবার চেষ্টা করুন।","Internet needed or something went wrong. Try again.");return}
+  m.textContent="";
+  if(MV.det){const d=MV.det,nt=(x)=>`<div class="mvc" style="margin:0 4px 6px">${x}</div>`;
+    l.innerHTML=`<button class="sb2" data-mb="1" style="margin-bottom:10px">${ic("al")}${H("ফিরুন","Back")}</button>
+    <div class="mvd">${d.poster?`<img src="https://image.tmdb.org/t/p/w342${d.poster}">`:""}<div><div class="mvt">${esc(d.title||"")}</div>${d.orig&&d.orig!==d.title?`<div class="mvm">${esc(d.orig)}</div>`:""}
+    <div class="mvm">${[d.year,d.rate?"⭐ "+d.rate.toFixed(1):"",d.run?d.run+H(" মিনিট"," min"):""].filter(Boolean).join(" · ")}</div><div class="mvm">${esc(d.gen||"")}</div>
+    ${d.dir?`<div class="mvm">${H("পরিচালক: ","Director: ")}${esc(d.dir)}</div>`:""}${d.cast?`<div class="mvm">${H("অভিনয়: ","Cast: ")}${esc(d.cast)}</div>`:""}</div></div>
+    ${d.tag?`<div class="mvm" style="margin:0 4px;font-style:italic">“${esc(d.tag)}”</div>`:""}
+    <div class="hh">${H("সংক্ষেপে","In short")}</div>
+    <div class="mvo" style="margin-top:0">${d.ov?esc(d.ov):H("সংক্ষিপ্ত বিবরণ পাওয়া যায়নি।","No short summary available.")}</div>
+    ${d.tr?nt(H("স্বয়ংক্রিয়ভাবে বাংলায় অনুবাদ করা, ভুল থাকতে পারে।","Auto-translated to Bengali; may contain errors.")):""}${d.en?nt(H("বাংলা পাওয়া যায়নি, ইংরেজি দেখানো হলো।","Bengali not available; showing English.")):""}
+    <div class="hh">${H("বিস্তারিত কাহিনি","Full story")}</div>
+    ${d.wl?`<div class="mvo" style="opacity:.6;margin-top:0">${H("লোড হচ্ছে...","Loading...")}</div>`:d.plot?`<div class="mvo" style="margin-top:0">${esc(d.plot)}</div>${d.pt?nt(H("স্বয়ংক্রিয়ভাবে বাংলায় অনুবাদ করা, ভুল থাকতে পারে।","Auto-translated to Bengali; may contain errors.")):d.ps==="en"?nt(H("বাংলা পাওয়া যায়নি, ইংরেজি দেখানো হলো।","Bengali not available; showing English.")):""}`:`<div class="mvo" style="opacity:.6;margin-top:0">${H("এই মুভির বিস্তারিত কাহিনি পাওয়া যায়নি।","No detailed story found for this movie.")}</div>`}
+    ${cr}`;return}
+  if(MV.res){if(!MV.res.length){l.innerHTML=hq;m.textContent=H("কোনো মুভি পাওয়া যায়নি।","No movies found.");return}
+    l.innerHTML=MV.res.map(r=>`<div class="it" data-mv="${r.id}"><div class="th${r.poster_path?"":" plt"}" style="overflow:hidden">${r.poster_path?`<img src="https://image.tmdb.org/t/p/w185${r.poster_path}" style="width:100%;height:100%;object-fit:cover">`:"🎬"}</div><div class="m"><div class="t">${esc(r.title||"")}</div><div class="a">${(r.release_date||"").slice(0,4)}${r.vote_average?" · ⭐ "+r.vote_average.toFixed(1):""}</div></div></div>`).join("")+cr;return}
+  l.innerHTML=hq+`<div class="mvc" style="text-align:center;margin-top:24px;font-size:13px">🎬 ${H("উপরে মুভির নাম লিখে সার্চ করুন, বাংলায় কাহিনি দেখাবে।","Search a movie name above to see its story in Bengali.")}</div>`}
+$("mq").addEventListener("keydown",e=>{if(e.key==="Enter"){mvSearch($("mq").value.trim());e.target.blur()}});
+applyLang();render();
 </script>
 </body>
 </html>
