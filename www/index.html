@@ -672,6 +672,11 @@ async function vrot(){if(HB()){try{await HB().orient({mode:innerWidth>innerHeigh
   try{await screen.orientation.lock(land?"portrait":"landscape")}catch(e){}
   setTimeout(()=>{if(!land&&innerWidth<=innerHeight){V.rot=1;vrotA()}},600)}
 const vpos=()=>{try{return JSON.parse(localStorage.getItem("hm_vpos")||"{}")}catch(e){return{}}};
+const vnm=()=>{try{return JSON.parse(localStorage.getItem("hm_vnames")||"{}")}catch(e){return{}}};
+const vnmGet=(k,d)=>vnm()[k]||d;
+function vrename(i){const t=V.q[i];if(!t)return;const n=prompt(VT("ভিডিওর নতুন নাম","New video name"),t.name);if(n===null)return;const nm=n.trim()||t.dn||t.name;
+  try{const o=vnm();if(n.trim())o[t.key]=nm;else delete o[t.key];localStorage.setItem("hm_vnames",JSON.stringify(o))}catch(e){}
+  t.name=nm;if(i===V.i)$("vtt").textContent=nm+(vv.videoWidth?" · "+vv.videoWidth+"×"+vv.videoHeight:"");vrq()}
 const vlast=()=>{try{return JSON.parse(localStorage.getItem("hm_vlast")||"[]")}catch(e){return[]}};
 function vsv(force){const t=V.q[V.i];if(!t||!vv.duration)return;if(!force&&Date.now()-V.ts<3000)return;V.ts=Date.now();try{const p=vpos();p[t.key]=vv.ended?0:vv.currentTime;localStorage.setItem("hm_vpos",JSON.stringify(p));const L=vlast().filter(x=>x.k!==t.key);L.unshift({k:t.key,n:t.name,p:vv.ended?0:vv.currentTime,d:vv.duration});localStorage.setItem("hm_vlast",JSON.stringify(L.slice(0,6)))}catch(e){}}
 function vplay(i){if(i<0||i>=V.q.length)return;V.i=i;const t=V.q[i];au.pause();V.sub=[];$("vsub").textContent="";$("vtt").textContent=t.name;
@@ -679,27 +684,29 @@ function vplay(i){if(i<0||i>=V.q.length)return;V.i=i;const t=V.q[i];au.pause();V
   vv.onloadedmetadata=()=>{if(p>5&&p<vv.duration-5){vv.currentTime=p;vind("↺ "+vfm(p))}$("vtt").textContent=t.name+" · "+vv.videoWidth+"×"+vv.videoHeight};
   vv.onerror=()=>vind(T("vErr"));vv.playbackRate=SP[V.si];vv.play().catch(()=>{});vrq()}
 function vadd(fs){const a=[...fs].filter(f=>(f.type||"").startsWith("video")||/\.(mp4|mkv|webm|mov|avi|3gp|m4v|ogv|ts)$/i.test(f.name));if(!a.length){vind(T("notVid"));return}
-  const st=V.q.length;a.forEach(f=>V.q.push({name:f.name.replace(/\.[^.]+$/,""),url:URL.createObjectURL(f),key:f.name+"|"+f.size,file:f}));
+  const st=V.q.length;a.forEach(f=>{const dn=f.name.replace(/\.[^.]+$/,""),key=f.name+"|"+f.size;V.q.push({name:vnmGet(key,dn),dn,url:URL.createObjectURL(f),key,file:f})});
   if(V.i<0||vv.paused)vplay(st);else vrq();$("vql").classList.remove("open");vshow()}
 function vnext(){if($("vsh").classList.contains("on")&&V.q.length>1){let n;do n=Math.random()*V.q.length|0;while(n===V.i);vplay(n)}else if(V.i<V.q.length-1)vplay(V.i+1)}
 function vprev(){if(vv.currentTime>3||V.i<1)vv.currentTime=0;else vplay(V.i-1)}
 const vtog=()=>vv.paused?vv.play().catch(()=>{}):vv.pause();
-const vseek=d=>{vv.currentTime=Math.min(Math.max(0,vv.currentTime+d),vv.duration||1e9);vind((d>0?"+":"")+d+"s")};
+const vseek=(d,q)=>{vv.currentTime=Math.min(Math.max(0,vv.currentTime+d),vv.duration||1e9);if(!q)vind((d>0?"+":"")+d+"s")};
+const vskip=dir=>{const n=Date.now();if(n-vskip.t>700||vskip.d!==dir)vskip.a=0;vskip.t=n;vskip.d=dir;vskip.a+=10;vseek(dir*10,1);vind((dir>0?"+":"-")+vskip.a+"s")};
+vskip.t=0;vskip.a=0;vskip.d=0;
 function vrq(){vp.classList.toggle("empty",V.i<0&&!V.q.length);
   $("vem").innerHTML=`<div class="vemi">${vic("play")}</div><h2>${T("vplayer")}</h2><p>${T("vEmp")}</p><div class="vemb"><label class="vbtn" for="vf">${ic("pu")}${T("vAdd")}</label><button class="vbtn ghost" id="vlnk2">${T("vLink")}</button></div><div class="vemh">MP4 · MKV · WebM · MOV</div>`;
-  $("vql").innerHTML=`<h3 style="margin-bottom:10px">${T("vq")}</h3><div class="row2" style="margin:0 0 10px"><label class="ok" for="vf" style="display:flex;flex:1;align-items:center;justify-content:center;cursor:pointer">${T("vAdd")}</label><button id="vlnk">${T("vLink")}</button></div>`+(V.q.length?V.q.map((t,i)=>`<div class="vi${i===V.i?" cur":""}" data-i="${i}"><span>${esc(t.name)}</span><button class="ib" data-r="${i}">${ic("x")}</button></div>`).join(""):`<div class="a">${T("vNone")}</div>`)}
-$("vql").onclick=e=>{const r=e.target.closest("[data-r]"),it=e.target.closest("[data-i]");
-  if(e.target.closest("#vlnk")){let u=prompt(T("vLinkP"));if(u&&/^https?:/i.test(u.trim())){u=u.trim();let n=u;try{n=decodeURIComponent(u.split("?")[0].split("/").pop())||u}catch(x){}V.q.push({name:n,url:u,key:u});vplay(V.q.length-1);$("vql").classList.remove("open");vshow()}}
+  $("vql").innerHTML=`<h3 style="margin-bottom:10px">${T("vq")}</h3><div class="row2" style="margin:0 0 10px"><label class="ok" for="vf" style="display:flex;flex:1;align-items:center;justify-content:center;cursor:pointer">${T("vAdd")}</label><button id="vlnk">${T("vLink")}</button></div>`+(V.q.length?V.q.map((t,i)=>`<div class="vi${i===V.i?" cur":""}" data-i="${i}"><span>${esc(t.name)}</span><button class="ib" data-e="${i}" style="font-size:17px">✎</button><button class="ib" data-r="${i}">${ic("x")}</button></div>`).join(""):`<div class="a">${T("vNone")}</div>`)}
+$("vql").onclick=e=>{const r=e.target.closest("[data-r]"),it=e.target.closest("[data-i]"),ed=e.target.closest("[data-e]");if(ed){vrename(+ed.dataset.e);return}
+  if(e.target.closest("#vlnk")){let u=prompt(T("vLinkP"));if(u&&/^https?:/i.test(u.trim())){u=u.trim();let n=u;try{n=decodeURIComponent(u.split("?")[0].split("/").pop())||u}catch(x){}V.q.push({name:vnmGet(u,n),dn:n,url:u,key:u});vplay(V.q.length-1);$("vql").classList.remove("open");vshow()}}
   else if(r){const i=+r.dataset.r,t=V.q[i];if(t.url.startsWith("blob:"))URL.revokeObjectURL(t.url);if(t.pu)URL.revokeObjectURL(t.pu);V.q.splice(i,1);if(i===V.i){vv.pause();vv.removeAttribute("src");vv.load();V.i=-1;$("vtt").textContent=""}else if(i<V.i)V.i--;vrq()}
   else if(it){vplay(+it.dataset.i);$("vql").classList.remove("open");vshow()}};
-function vlink(){let u=prompt(T("vLinkP"));if(u&&/^https?:/i.test(u.trim())){u=u.trim();let n=u;try{n=decodeURIComponent(u.split("?")[0].split("/").pop())||u}catch(x){}V.q.push({name:n,url:u,key:u});vplay(V.q.length-1);vshow()}}
+function vlink(){let u=prompt(T("vLinkP"));if(u&&/^https?:/i.test(u.trim())){u=u.trim();let n=u;try{n=decodeURIComponent(u.split("?")[0].split("/").pop())||u}catch(x){}V.q.push({name:vnmGet(u,n),dn:n,url:u,key:u});vplay(V.q.length-1);vshow()}}
 $("vem").onclick=e=>{if(e.target.closest("#vlnk2"))vlink()};
 $("vf").onchange=e=>{const fs=[...e.target.files];e.target.value="";vadd(fs)};
 function vparse(x){const tm=z=>{const m=z.trim().match(/(?:(\d+):)?(\d+):(\d+)[,.](\d+)/);return m?(+(m[1]||0))*3600+ +m[2]*60+ +m[3]+ +("0."+m[4]):0};
   return x.replace(/\r/g,"").replace(/^\uFEFF/,"").split(/\n\n+/).map(b=>{const l=b.split("\n"),k=l.findIndex(y=>y.includes("-->"));if(k<0)return null;const[a,z]=l[k].split("-->");return[tm(a),tm(z),l.slice(k+1).join("\n").replace(/<[^>]+>|\{[^}]+\}/g,"")]}).filter(Boolean)}
 $("vs").onchange=async e=>{const f=e.target.files[0];e.target.value="";if(!f)return;V.sub=vparse(await f.text());V.cc=1;$("vcc").classList.add("on");vind(V.sub.length?T("subOk"):T("subNo"))};
 V.sd=0;V.ss=18;V.slm=0;V.eq=[0,0,0,0,0];V.bo=1;let lastSub="";
-function vui(){const d=vv.duration||0;$("vct").textContent=vfm(vv.currentTime);$("vdt").textContent=vfm(d);
+function vui(){const d=vv.duration||0;$("vct").textContent=vfm(vv.currentTime);$("vdt").textContent=V.rem&&d?"-"+vfm(d-vv.currentTime):vfm(d);
   if(!V.drag&&d){const p=vv.currentTime/d*100;let b=0;try{b=vv.buffered.length?vv.buffered.end(vv.buffered.length-1)/d*100:0}catch(e){}
     $("vsk").value=p*10;$("vsk").style.background=`linear-gradient(to right,var(--ac) ${p}%,rgba(255,255,255,.4) ${p}%,rgba(255,255,255,.4) ${b}%,rgba(255,255,255,.15) ${b}%)`}}
 vv.ontimeupdate=()=>{if(!vp.classList.contains("hide"))vui();
@@ -709,6 +716,7 @@ vv.onended=()=>{vsv(1);if(V.slm===-1){V.slm=0;vind("💤");return}if(!vv.loop)vn
 au.addEventListener("play",()=>{if(!vv.paused)vv.pause()});
 $("vsk").oninput=()=>{V.drag=1;const t=$("vsk").value/1000*(vv.duration||0);$("vct").textContent=vfm(t);if(Date.now()-(V.sk||0)>150){V.sk=Date.now();vv.currentTime=t}};
 $("vsk").onchange=()=>{vv.currentTime=$("vsk").value/1000*(vv.duration||0);V.drag=0};
+$("vdt").style.cursor="pointer";$("vdt").onclick=()=>{V.rem=!V.rem;vui();vshow()};
 $("vbk").onclick=vclose;$("vpp").onclick=vtog;$("vpv").onclick=vprev;$("vnx").onclick=vnext;
 $("vqb").onclick=()=>{$("vlm").classList.remove("open");$("vmp").classList.remove("open");$("vql").classList.toggle("open");vshow()};
 const vmi=()=>{$("vmu").innerHTML=vic(vv.muted||!vv.volume?"mute":"vol")};
@@ -725,25 +733,27 @@ $("vlkb").onclick=()=>{V.lk=1;vp.classList.add("lock")};
 $("vlk").onclick=()=>{V.lk=0;vp.classList.remove("lock");vshow()};
 $("vfs").onclick=async()=>{if(HB()){vbars(!V.imm);return}try{if(document.fullscreenElement||document.webkitFullscreenElement){V.nofs=1;await vfull(0)}else{V.nofs=0;await vfull(1)}}catch(e){vind(T("noFs"))}};
 $("vrot").onclick=vrot;
-{const g=$("vgl"),sb=$("vsub"),SPK="hm_subpos";let ds=0,lt=0,sx=0,sy=0,sm=0,s0=0,lp=0,sd=0,sb0=0,raf=0,pend=null,nc=0;
+{const g=$("vgl"),sb=$("vsub"),SPK="hm_subpos";let ds=0,lt=0,sx=0,sy=0,sm=0,s0=0,lp=0,sd=0,sb0=0,raf=0,pend=null,nc=0,sh=0,sh0=0,shT=0;
   V.sf=.16;try{const x=parseFloat(localStorage.getItem(SPK));if(x>=.02&&x<=.9)V.sf=x}catch(e){}
   sb.style.bottom=(V.sf*100)+"%";
   V.spReset=()=>{V.sf=.16;sb.style.bottom="16%";try{localStorage.removeItem(SPK)}catch(e){}};
   g.oncontextmenu=e=>e.preventDefault();
   g.onclick=e=>{if(Date.now()-nc<500)return;const pn=document.querySelector("#vql.open,#vlm.open,#vmp.open");if(pn){pn.classList.remove("open");vshow();return}if(V.lk)return;if(!V.nofs&&!(document.fullscreenElement||document.webkitFullscreenElement))vfull(1).catch(()=>{V.nofs=1});const n=Date.now(),x=vxy(e)[0]/vW();
-    if(n-ds<450&&(x<.35||x>.65)){ds=n;lt=0;vseek(x<.35?-10:10)}else if(n-lt<300){lt=0;if(x<.35){ds=n;vseek(-10)}else if(x>.65){ds=n;vseek(10)}else vtog()}else{lt=n;setTimeout(()=>{if(lt===n){vp.classList.contains("hide")?vshow():vp.classList.add("hide")}},300)}};
-  g.ontouchstart=e=>{const t=vxy(e.touches[0]);sx=t[0];sy=t[1];sm=0;sd=0;clearTimeout(lp);lp=0;s0=sx<vW()/2?V.br:vv.volume;
+    if(n-ds<450&&(x<.35||x>.65)){ds=n;lt=0;vskip(x<.35?-1:1)}else if(n-lt<300){lt=0;if(x<.35){ds=n;vskip(-1)}else if(x>.65){ds=n;vskip(1)}else vtog()}else{lt=n;setTimeout(()=>{if(lt===n){vp.classList.contains("hide")?vshow():vp.classList.add("hide")}},300)}};
+  g.ontouchstart=e=>{const t=vxy(e.touches[0]);sx=t[0];sy=t[1];sm=0;sd=0;sh=0;clearTimeout(lp);lp=0;s0=sx<vW()/2?V.br:vv.volume;
     if(!V.lk&&e.touches.length===1&&V.sub.length){const bot=vH()*(1-V.sf),h=Math.max(sb.offsetHeight,24);
       if(sy>bot-h-40&&sy<bot+40)lp=setTimeout(()=>{lp=0;sd=1;sb0=V.sf;sb.classList.add("dg");try{navigator.vibrate(25)}catch(x){}vind(VT("উপরে-নিচে সরান","Drag up/down"))},450)}};
   g.ontouchmove=e=>{const t=vxy(e.touches[0]),dy=sy-t[1];
     if(sd){V.sf=Math.min(.9,Math.max(.02,sb0+dy/vH()));sb.style.bottom=(V.sf*100)+"%";return}
     if(lp&&(Math.abs(dy)>12||Math.abs(t[0]-sx)>12)){clearTimeout(lp);lp=0}
-    if(V.lk)return;if(!sm&&Math.abs(dy)>16&&Math.abs(t[0]-sx)<Math.abs(dy))sm=1;if(!sm)return;
+    if(V.lk)return;const dx=t[0]-sx;if(!sm&&!sh&&e.touches.length===1){if(Math.abs(dy)>16&&Math.abs(dx)<Math.abs(dy))sm=1;else if(Math.abs(dx)>16&&Math.abs(dx)>Math.abs(dy)&&vv.duration){sh=1;sh0=vv.currentTime}}
+    if(sh){shT=Math.min(Math.max(0,sh0+dx/vW()*90),vv.duration||0);const df=Math.round(shT-sh0);vind((df>=0?"+":"-")+Math.abs(df)+"s · "+vfm(shT));return}
+    if(!sm)return;
     pend=sx<vW()/2?["b",Math.min(1.6,Math.max(.3,s0+dy/vH()*1.6))]:["v",Math.min(1,Math.max(0,s0+dy/vH()*1.6))];
     if(!raf)raf=requestAnimationFrame(()=>{raf=0;const p=pend;if(!p)return;
       if(p[0]==="b"){vbr(p[1]);vind(T("vBr")+" "+Math.round(p[1]*100)+"%")}
       else{vv.volume=p[1];vv.muted=false;$("vvol").value=p[1];vmi();vind(T("vVol")+" "+Math.round(p[1]*100)+"%")}})};
-  g.ontouchend=g.ontouchcancel=()=>{clearTimeout(lp);lp=0;if(sd){sd=0;sb.classList.remove("dg");nc=Date.now();try{localStorage.setItem(SPK,V.sf)}catch(e){}}}}
+  g.ontouchend=g.ontouchcancel=()=>{clearTimeout(lp);lp=0;if(sh){sh=0;vv.currentTime=shT;nc=Date.now();vui()}if(sd){sd=0;sb.classList.remove("dg");nc=Date.now();try{localStorage.setItem(SPK,V.sf)}catch(e){}}}}
 
 const VT=(b,e)=>lang==="en"?e:b;
 function vbr(b){V.br=b;const dm=$("vdim");if(b<=1){dm.style.opacity=1-b;vv.style.filter=""}else{dm.style.opacity=0;vv.style.filter=`brightness(${b})`}}
